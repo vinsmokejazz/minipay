@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -12,18 +13,20 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-signInRouter.post("/", async (req, res) => {
+signInRouter.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
     // Validate input
     const validationResult = signInSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({
+      res.status(400).json({
+        success: false,
         message: "Validation failed",
-        errors: validationResult.error.issues.map((err: any) => ({
+        errors: validationResult.error.issues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         })),
       });
+      return;
     }
 
     const { username, password } = validationResult.data;
@@ -31,37 +34,60 @@ signInRouter.post("/", async (req, res) => {
     // Find user by username (lowercase)
     const user = await User.findOne({ username: username.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ message: "Invalid Credentials" });
+      res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+      return;
     }
 
     // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid Credentials" });
+      res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+      return;
+    }
+
+    // Verify JWT secret exists
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET is not defined in environment variables");
+      res.status(500).json({
+        success: false,
+        message: "Internal server error - Authentication configuration missing",
+      });
+      return;
     }
 
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user._id,
+        userId: String(user._id),
         username: user.username,
       },
-      process.env.JWT_SECRET as string,
+      jwtSecret,
       { expiresIn: "7d" }
     );
 
     res.status(200).json({
-      message: "Sign In Successful",
+      success: true,
+      message: "Sign in successful",
       token,
       user: {
-        id: user._id,
+        id: String(user._id),
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
       },
     });
   } catch (error) {
-    console.error("Signin error:", error);
-    res.status(500).json({ message: "Internal Server error" });
+    console.error("SignIn error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });

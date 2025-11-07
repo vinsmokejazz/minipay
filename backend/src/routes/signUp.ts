@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -11,27 +12,41 @@ const signUpSchema = z.object({
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
-    .max(19, "Username must be at most 19 characters"),
+    .max(19, "Username must be at most 19 characters")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Username can only contain letters, numbers, and underscores"
+    ),
   password: z
     .string()
     .min(6, "Password must be at least 6 characters")
     .max(15, "Password must be at most 15 characters"),
-  firstName: z.string().min(3, "First name must be at least 3 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  firstName: z
+    .string()
+    .min(3, "First name must be at least 3 characters")
+    .max(50, "First name must be at most 50 characters")
+    .trim(),
+  lastName: z
+    .string()
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be at most 50 characters")
+    .trim(),
 });
 
-signUpRouter.post("/", async (req, res) => {
+signUpRouter.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
     // Validate input
     const validationResult = signUpSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({
+      res.status(400).json({
+        success: false,
         message: "Validation failed",
-        errors: validationResult.error.issues.map((err: any) => ({
+        errors: validationResult.error.issues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         })),
       });
+      return;
     }
 
     const { username, password, firstName, lastName } = validationResult.data;
@@ -41,7 +56,22 @@ signUpRouter.post("/", async (req, res) => {
       username: username.toLowerCase(),
     });
     if (existingUser) {
-      return res.status(409).json({ message: "Username already exists" });
+      res.status(409).json({
+        success: false,
+        message: "Username already exists",
+      });
+      return;
+    }
+
+    // Verify JWT secret exists
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET is not defined in environment variables");
+      res.status(500).json({
+        success: false,
+        message: "Internal server error - Authentication configuration missing",
+      });
+      return;
     }
 
     // Hash password
@@ -61,18 +91,19 @@ signUpRouter.post("/", async (req, res) => {
     // Generate JWT token for auto sign-in
     const token = jwt.sign(
       {
-        userId: newUser._id,
+        userId: String(newUser._id),
         username: newUser.username,
       },
-      process.env.JWT_SECRET as string,
+      jwtSecret,
       { expiresIn: "7d" }
     );
 
     res.status(201).json({
+      success: true,
       message: "User created successfully",
       token,
       user: {
-        id: newUser._id,
+        id: String(newUser._id),
         username: newUser.username,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -80,6 +111,9 @@ signUpRouter.post("/", async (req, res) => {
     });
   } catch (error) {
     console.error("SignUp error:", error);
-    res.status(500).json({ message: "Internal Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
