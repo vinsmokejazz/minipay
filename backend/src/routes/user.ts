@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { Request, Response } from "express";
 import express from "express";
 import { authMiddleware } from "../middleware/middleware.js";
 import { User } from "../models/user.model.js";
