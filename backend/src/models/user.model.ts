@@ -1,5 +1,6 @@
-import mongoose, { Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 import type { IUser } from "../types/user.interface.js";
+import bcrypt from "bcrypt";
 
 const userSchema = new Schema<IUser>(
   {
@@ -34,7 +35,19 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Add indexes for better query performance
+// indexes for better query performance
 userSchema.index({ username: 1 });
+userSchema.index({ firstName: 1 });
+userSchema.index({ lastName: 1 });
+
+
+
+
+// Instance method for password comparison 
+// userSchema.methods.comparePassword = async function(candidatePassword: string):Promise<boolean>{
+//   // Compare the input password with the stored hashed password
+//   return bcrypt.compare(candidatePassword,this.password);
+// }
+
 
 export const User = model<IUser>("User", userSchema);
