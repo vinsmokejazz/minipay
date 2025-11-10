@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { User } from "../models/user.model.js";
+import { Account } from "../models/accounts.model.js";
 
 export const signUpRouter = express.Router();
 
@@ -97,6 +98,12 @@ signUpRouter.post("/", async (req: Request, res: Response): Promise<void> => {
       jwtSecret,
       { expiresIn: "7d" }
     );
+
+    // random balance This is so we don’t have to integrate with banks and give them random balances to start with
+    await Account.create({
+      userId: newUser._id,
+      balance: Math.floor(Math.random() * 1000) + 1, // between 1 and 10000
+    });
 
     res.status(201).json({
       success: true,
