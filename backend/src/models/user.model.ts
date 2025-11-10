@@ -16,7 +16,6 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       minLength: 6,
-      maxLength: 15,
     },
     firstName: {
       type: String,
@@ -35,7 +34,6 @@ const userSchema = new Schema<IUser>(
 );
 
 // indexes for better query performance
-userSchema.index({ username: 1 });
 userSchema.index({ firstName: 1 });
 userSchema.index({ lastName: 1 });
 
