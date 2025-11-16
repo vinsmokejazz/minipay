@@ -24,6 +24,8 @@ const accountSchema = new Schema<IAccount>(
   { timestamps: true }
 );
 
+accountSchema.index({ userId: 1, balance: 1 });
+
 // Static method for safe balance updates (prevents race conditions:e.g., two users updating balance at the same time )
 
 accountSchema.statics.updateBalance = async function (

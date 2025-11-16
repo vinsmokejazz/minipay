@@ -34,17 +34,14 @@ const userSchema = new Schema<IUser>(
 );
 
 // indexes for better query performance
+userSchema.index({ username: 1 });
 userSchema.index({ firstName: 1 });
 userSchema.index({ lastName: 1 });
 
-
-
-
-// Instance method for password comparison 
+// Instance method for password comparison
 // userSchema.methods.comparePassword = async function(candidatePassword: string):Promise<boolean>{
 //   // Compare the input password with the stored hashed password
 //   return bcrypt.compare(candidatePassword,this.password);
 // }
-
 
 export const User = model<IUser>("User", userSchema);

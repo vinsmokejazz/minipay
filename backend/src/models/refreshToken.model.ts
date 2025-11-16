@@ -13,7 +13,10 @@ export interface RefreshTokenModel extends mongoose.Model<IRefreshToken> {
   revokeAllForUser(userId: string): Promise<any>;
 }
 
-const refreshTokenSchema = new mongoose.Schema<IRefreshToken, RefreshTokenModel>(
+const refreshTokenSchema = new mongoose.Schema<
+  IRefreshToken,
+  RefreshTokenModel
+>(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +42,9 @@ const refreshTokenSchema = new mongoose.Schema<IRefreshToken, RefreshTokenModel>
   },
   { timestamps: true }
 );
+
+refreshTokenSchema.index({ token: 1 });
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 refreshTokenSchema.statics.revokeAllForUser = async function (userId: string) {
   return this.updateMany({ userId }, { isRevoked: true });
