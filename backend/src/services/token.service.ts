@@ -4,8 +4,7 @@ import { RefreshToken } from "../models/refreshToken.model.js";
 
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const REFRESH_SECRET = process.env.REFRESH_SECRET!;  // Add to .env (different from JWT_SECRET)
-
+const REFRESH_SECRET = process.env.REFRESH_SECRET!;
 export interface AuthPayload {
   userId: string;
   username: string;
