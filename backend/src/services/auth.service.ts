@@ -1,23 +1,22 @@
-import jwt from "jsonwebtoken";
 import { createUser, findByUsername, verifyPassword } from "./user.service.js";
 import { Account } from "../models/accounts.model.js";
+import { generateAccessToken, generateRefreshToken } from "./token.service.js";
 import type { CreateUserInput, SignInInput, UserResponse } from "../types/api.interface.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
-
-export const signUp = async (input: CreateUserInput): Promise<{ user: UserResponse; token: string }> => {
+export const signUp = async (input: CreateUserInput): Promise<{ user: UserResponse; accessToken: string; refreshToken: string }> => {
   // create user
   const user = await createUser(input);
   // create account with some test balance
   await Account.create({ userId: user.id, balance: Math.floor(Math.random() * 1000) + 1 });
 
-  // issue token
-  const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
+  // issue tokens
+  const accessToken = generateAccessToken({ userId: user.id, username: user.username });
+  const refreshToken = await generateRefreshToken(user.id);
 
-  return { user, token };
+  return { user, accessToken, refreshToken };
 };
 
-export const signIn = async (input: SignInInput): Promise<{ user: UserResponse; token: string }> => {
+export const signIn = async (input: SignInInput): Promise<{ user: UserResponse; accessToken: string; refreshToken: string }> => {
   const existing = await findByUsername(input.username);
   if (!existing) {
     const err: any = new Error("Invalid credentials");
@@ -39,7 +38,8 @@ export const signIn = async (input: SignInInput): Promise<{ user: UserResponse; 
     lastName: existing.lastName,
   };
 
-  const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
+  const accessToken = generateAccessToken({ userId: user.id, username: user.username });
+  const refreshToken = await generateRefreshToken(user.id);
 
-  return { user, token };
+  return { user, accessToken, refreshToken };
 };
