@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-### Frontend (Next.js 16 + Tailwind + Framer Motion)
+### Frontend (Next.js 16 + Tailwind + Framer Motion) (still in development)
 - **Features**: dark marketing page, auth flows under `app/(auth)`, dashboard + transfer views under `app/(dashboard)`, Zustand auth store, SWR balance polling, Framer Motion animations.
 - **Environment**: create `frontend/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` (adjust for your backend host). Tokens are stored via cookies/zustand; middleware guards `/dashboard` routes.
 - **Run it**:
