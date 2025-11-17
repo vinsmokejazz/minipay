@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import { Account } from "../models/accounts.model.js";
-import type { ITransferInput, ITransferResponse } from "../types/account.interface.js";
+import type {
+  ITransferInput,
+  ITransferResponse,
+} from "../types/account.interface.js";
 import redisClient from "../config/redis.js";
 
 export const getAccountBalance = async (userId: string) => {
@@ -10,10 +13,6 @@ export const getAccountBalance = async (userId: string) => {
     return { balance: parseFloat(cachedBalance) };
   }
 
-  
-
-  
-  
   const account = await Account.findOne({ userId });
   if (!account) {
     const err: any = new Error("Account not found");
@@ -26,7 +25,10 @@ export const getAccountBalance = async (userId: string) => {
   return { balance: account.balance };
 };
 
-export const transferFunds = async (fromUserId: string, input: ITransferInput): Promise<ITransferResponse> => {
+export const transferFunds = async (
+  fromUserId: string,
+  input: ITransferInput
+): Promise<ITransferResponse> => {
   const { amount, to } = input;
 
   if (!mongoose.Types.ObjectId.isValid(to)) {
@@ -45,7 +47,9 @@ export const transferFunds = async (fromUserId: string, input: ITransferInput): 
   session.startTransaction();
 
   try {
-    const fromAccount = await Account.findOne({ userId: fromUserId }).session(session);
+    const fromAccount = await Account.findOne({ userId: fromUserId }).session(
+      session
+    );
     if (!fromAccount) {
       const error: any = new Error("Sender account not found");
       error.status = 404;
@@ -68,8 +72,14 @@ export const transferFunds = async (fromUserId: string, input: ITransferInput): 
     const newFromBalance = fromAccount.balance - amount;
     const newToBalance = toAccount.balance + amount;
 
-    await Account.updateOne({ userId: fromUserId }, { $set: { balance: newFromBalance } }).session(session);
-    await Account.updateOne({ userId: to }, { $set: { balance: newToBalance } }).session(session);
+    await Account.updateOne(
+      { userId: fromUserId },
+      { $set: { balance: newFromBalance } }
+    ).session(session);
+    await Account.updateOne(
+      { userId: to },
+      { $set: { balance: newToBalance } }
+    ).session(session);
 
     await session.commitTransaction();
 
@@ -77,7 +87,12 @@ export const transferFunds = async (fromUserId: string, input: ITransferInput): 
     await redisClient.del(`balance:${fromUserId}`);
     await redisClient.del(`balance:${to}`);
 
-    return { success: true, message: "Transfer successful", fromBalance: newFromBalance, toBalance: newToBalance };
+    return {
+      success: true,
+      message: "Transfer successful",
+      fromBalance: newFromBalance,
+      toBalance: newToBalance,
+    };
   } catch (error) {
     await session.abortTransaction();
     throw error;
